@@ -29,7 +29,10 @@ async def chat(ctx, *, prompt):
         try:
             completion = client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
+                messages=[
+                    {"role": "system", "content": "Anda adalah asisten yang membalas dengan bahasa sesuai pesan pengguna."},
+                    {"role": "user", "content": prompt}
+                    ]
             )
             response = completion.choices[0].message.content
             await ctx.send(response)
