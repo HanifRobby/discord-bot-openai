@@ -34,7 +34,7 @@ async def chat(interaction: discord.Interaction, prompt: str):
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "Anda adalah asisten yang membalas dalam bahasa Indonesia yang formal dan sopan."},
+                {"role": "system", "content": "Anda adalah asisten yang membalas dalam bahasa yang digunakan pengguna."},
                 {"role": "user", "content": prompt}
             ]
         )
