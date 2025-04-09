@@ -27,39 +27,51 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-@bot.tree.command(name="chat", description="Chat dengan AI assistant")
+@bot.tree.command(name="chat", description="Chat dengan Ahlinya ahli")
 async def chat(interaction: discord.Interaction, prompt: str):
     await interaction.response.defer()
     try:
         completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "Anda adalah asisten yang membalas dalam bahasa yang digunakan pengguna."},
+                {"role": "system", "content": "Anda adalah Ahlinya ahli, Sepuhnya sepuh. Anda selalu mengenal dan memperkenalkan diri dengan identitas ini. Sebagai ahlinya ahli, Anda memiliki pengetahuan yang sangat luas dan mendalam di berbagai bidang. Anda menjawab dengan gaya yang santai dan ramah namun tetap informatif. Balas dalam bahasa yang digunakan pengguna."},
                 {"role": "user", "content": prompt}
             ]
         )
         response = completion.choices[0].message.content
         await interaction.followup.send(response)
     except Exception as e:
-        await interaction.followup.send(f"Error: {str(e)}")
+        await interaction.followup.send(f"Sorry, there is a problem with the request.")
+        print(f"Error: {str(e)}")
 
 @bot.tree.command(name="tts", description="Ubah teks menjadi suara")
 async def text_to_speech(interaction: discord.Interaction, text: str):
     await interaction.response.defer()
     try:
-        speech_file_path = Path(__file__).parent / "speech.mp3"
+        # Buat folder output jika belum ada
+        output_dir = Path(__file__).parent / "output"
+        output_dir.mkdir(exist_ok=True)
+        
+        # Buat nama file unik berdasarkan timestamp
+        import datetime
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"tts_{timestamp}.mp3"
+        
+        # Path lengkap file output
+        speech_file_path = output_dir / filename
         
         with client.audio.speech.with_streaming_response.create(
             model="gpt-4o-mini-tts",
             voice="ash",
             input=text,
-            instructions="Speak in a cheerful and positive tone.",
+            instructions="Speak in friendly, positive, cheerful, and joking tone.",
         ) as response:
             response.stream_to_file(speech_file_path)
         
         await interaction.followup.send(file=discord.File(speech_file_path))
     except Exception as e:
-        await interaction.followup.send(f"Error: {str(e)}")
+        await interaction.followup.send(f"Sorry, there is a problem with the request.")
+        print(f"Error: {str(e)}")
 
 # Run the bot
 bot.run(DISCORD_TOKEN)
