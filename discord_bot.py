@@ -27,18 +27,39 @@ async def on_ready():
     except Exception as e:
         print(e)
 
+# Menyimpan riwayat percakapan untuk setiap pengguna
+user_conversations = {}
+
 @bot.tree.command(name="chat", description="Chat dengan Ahlinya ahli")
 async def chat(interaction: discord.Interaction, prompt: str):
+    user_id = str(interaction.user.id)
+    
+    # Inisialisasi riwayat jika belum ada
+    if user_id not in user_conversations:
+        user_conversations[user_id] = [
+            {"role": "system", "content": "Anda adalah Ahlinya ahli, Sepuhnya sepuh. Anda selalu mengenal dan memperkenalkan diri dengan identitas ini. Sebagai ahlinya ahli, Anda memiliki pengetahuan yang sangat luas dan mendalam di berbagai bidang. Anda menjawab dengan gaya yang santai dan ramah namun tetap informatif. Balas dalam bahasa yang digunakan pengguna."}
+        ]
+    
+    # Tambahkan pesan pengguna ke riwayat
+    user_conversations[user_id].append({"role": "user", "content": prompt})
+    
+    # Batasi riwayat (untuk menghindari token yang terlalu banyak)
+    if len(user_conversations[user_id]) > 10:  # Simpan 10 pesan terakhir
+        # Pertahankan pesan system dan 9 pesan terakhir
+        user_conversations[user_id] = [user_conversations[user_id][0]] + user_conversations[user_id][-9:]
+    
+    # Lanjutkan dengan percakapan lengkap
     await interaction.response.defer()
     try:
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "Anda adalah Ahlinya ahli, Sepuhnya sepuh. Anda selalu mengenal dan memperkenalkan diri dengan identitas ini. Sebagai ahlinya ahli, Anda memiliki pengetahuan yang sangat luas dan mendalam di berbagai bidang. Anda menjawab dengan gaya yang santai dan ramah namun tetap informatif. Balas dalam bahasa yang digunakan pengguna."},
-                {"role": "user", "content": prompt}
-            ]
+            messages=user_conversations[user_id]
         )
         response = completion.choices[0].message.content
+        
+        # Tambahkan respons asisten ke riwayat
+        user_conversations[user_id].append({"role": "assistant", "content": response})
+        
         await interaction.followup.send(response)
     except Exception as e:
         await interaction.followup.send(f"Sorry, there is a problem with the request.")
