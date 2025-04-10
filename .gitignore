@@ -5,3 +5,4 @@
 output/
 logs/
 __pycache__/
+.vscode/
