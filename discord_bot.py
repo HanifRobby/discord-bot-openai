@@ -1,5 +1,6 @@
 import os
 import discord
+import datetime
 from discord.ext import commands
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -74,7 +75,7 @@ async def text_to_speech(interaction: discord.Interaction, text: str):
         output_dir.mkdir(exist_ok=True)
         
         # Buat nama file unik berdasarkan timestamp
-        import datetime
+
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"tts_{timestamp}.mp3"
         
