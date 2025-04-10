@@ -13,9 +13,6 @@ from logger import setup_logger
 # Setup logger
 logger = setup_logger("discord_gemini_bot")
 
-# Setup log awal
-logger.info("🚀 Initializing systems...")
-
 # Load environment variables
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -29,22 +26,22 @@ openai_client = OpenAI(api_key=OPENAI_KEY)
 
 # Initialize Gemini model
 model = genai.GenerativeModel('gemini-2.0-flash')
-logger.info("🤖 Initializing Gemini model: gemini-2.0-flash")
+logger.info("Initialized Gemini model: gemini-2.0-flash")
 
 # Initialize Discord bot
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
-logger.info("🔌 Discord bot initialized and ready")
+logger.info("Discord bot initialized")
 
 @bot.event
 async def on_ready():
-    logger.info(f"✅ Bot '{bot.user}' connected to Discord!")
+    logger.info(f'Bot {bot.user} has connected to Discord!')
     try:
         synced = await bot.tree.sync()
-        logger.info(f"🔄 Commands synced: {len(synced)} command(s)")
+        logger.info(f"Synced {len(synced)} command(s)")
     except Exception as e:
-        logger.error(f"❌ Command sync failed: {e}")
+        logger.error(f"Error syncing commands: {e}")
 
 # Menyimpan riwayat percakapan untuk setiap pengguna
 user_conversations = {}
@@ -53,11 +50,11 @@ user_conversations = {}
 async def chat(interaction: discord.Interaction, prompt: str):
     user_id = str(interaction.user.id)
     username = interaction.user.name
-    logger.info(f"💬 CMD: /chat | User: {username}")
+    logger.info(f"User {username} (ID: {user_id}) menggunakan command /chat")
     
     # Inisialisasi chat jika belum ada
     if user_id not in user_conversations:
-        logger.info(f"📝 NEW CHAT | User: {username}")
+        logger.info(f"Membuat riwayat percakapan baru untuk {username}")
         user_conversations[user_id] = model.start_chat(
             history=[
                 {
@@ -74,17 +71,11 @@ async def chat(interaction: discord.Interaction, prompt: str):
     # Kirim pesan dan dapatkan respons
     await interaction.response.defer()
     try:
-        # Truncate prompt for logging and add ellipsis if needed
-        log_prompt = prompt[:30] + ('...' if len(prompt) > 30 else '')
-        logger.info(f"📥 PROMPT | User: {username} | Input: '{log_prompt}'")
-        
+        logger.info(f"Memproses prompt dari {username}: '{prompt[:30]}...'")
         response = user_conversations[user_id].send_message(prompt)
         
-        # Calculate chunks for better logging
-        response_length = len(response.text)
-        chunks_count = (response_length // 1900) + (1 if response_length % 1900 > 0 else 0)
-        
-        logger.info(f"📤 RESPONSE | User: {username} | Chars: {response_length} | Chunks: {chunks_count}")
+        # Log response length
+        logger.info(f"Respons untuk {username}: {len(response.text)} karakter")
         
         # Pecah respons panjang menjadi beberapa bagian
         full_response = response.text
@@ -107,7 +98,7 @@ async def chat(interaction: discord.Interaction, prompt: str):
             await interaction.followup.send(full_response)
             
     except Exception as e:
-        logger.error(f"🔴 ERROR | User: {username} | Error: {str(e)}")
+        logger.error(f"Error saat memproses chat dari {username}: {e}")
         await interaction.followup.send("Maaf, ada masalah dengan permintaan.")
 
 
@@ -115,7 +106,7 @@ async def chat(interaction: discord.Interaction, prompt: str):
 @bot.tree.command(name="tts", description="Ubah teks menjadi suara")
 async def text_to_speech(interaction: discord.Interaction, text: str):
     username = interaction.user.name
-    logger.info(f"🔊 CMD: /tts | User: {username}")
+    logger.info(f"User {username} menggunakan command /tts")
     
     await interaction.response.defer()
     try:
@@ -130,9 +121,6 @@ async def text_to_speech(interaction: discord.Interaction, text: str):
         # Path lengkap file output
         speech_file_path = output_dir / filename
         
-        # Log saat memulai pembuatan TTS
-        logger.info(f"⏳ TTS PROCESSING | User: {username}")
-        
         with openai_client.audio.speech.with_streaming_response.create(
             model="gpt-4o-mini-tts",
             voice="ash",
@@ -141,11 +129,10 @@ async def text_to_speech(interaction: discord.Interaction, text: str):
         ) as response:
             response.stream_to_file(speech_file_path)
         
-        # Setelah file berhasil dibuat
-        logger.info(f"✅ TTS COMPLETE | User: {username} | File: {filename}")
+        logger.info(f"File TTS berhasil dibuat: {filename}")
         await interaction.followup.send(file=discord.File(speech_file_path))
     except Exception as e:
-        logger.error(f"🔴 TTS ERROR | User: {username} | Error: {str(e)}")
+        logger.error(f"Error saat membuat TTS untuk {username}: {e}")
         await interaction.followup.send(f"Sorry, there is a problem with the request.")
 
 
@@ -154,21 +141,21 @@ async def text_to_speech(interaction: discord.Interaction, text: str):
 async def reset_conversation(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
     username = interaction.user.name
-    logger.info(f"🔄 CMD: /reset | User: {username}")
+    logger.info(f"User {username} (ID: {user_id}) menggunakan command /reset")
     
     if user_id in user_conversations:
         del user_conversations[user_id]
-        logger.info(f"🗑️ RESET SUCCESS | User: {username}")
+        logger.info(f"Riwayat percakapan untuk {username} berhasil direset")
         await interaction.response.send_message("Riwayat percakapan telah direset.")
     else:
-        logger.info(f"⚠️ RESET SKIPPED | User: {username} | No conversation history")
+        logger.info(f"User {username} mencoba mereset riwayat yang tidak ada")
         await interaction.response.send_message("Tidak ada riwayat percakapan untuk direset.")
 
 # Run the bot with logging
-logger.info("🟢 Bot starting up...")
+logger.info("Starting bot")
 try:
     bot.run(DISCORD_TOKEN)
 except Exception as e:
-    logger.critical(f"🔴 CRITICAL: Bot crashed: {e}")
+    logger.critical(f"Bot crashed: {e}")
 finally:
-    logger.info("🔵 Bot shutting down")
+    logger.info("Bot shutting down")
