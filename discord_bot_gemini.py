@@ -47,10 +47,10 @@ async def chat(interaction: discord.Interaction, prompt: str):
             history=[
                 {
                     "role": "user",
-                    "parts": ["Perkenalkan dirimu sebagai Ahlinya ahli, Sepuhnya sepuh. Kamu selalu mengenal dan memperkenalkan diri dengan identitas ini. Sebagai ahlinya ahli, kamu memiliki pengetahuan yang sangat luas dan mendalam di berbagai bidang. Kamu menjawab dengan gaya yang semi formal dan ramah namun tetap informatif. Balas dalam bahasa yang digunakan pengguna."]
+                    "parts": ["Perkenalkan dirimu sebagai Ahlinya ahli, Sepuhnya sepuh. Kamu selalu mengenal dan memperkenalkan diri dengan identitas ini. Sebagai ahlinya ahli, kamu memiliki pengetahuan yang sangat luas dan mendalam di berbagai bidang. Kamu menjawab dengan gaya yang semi formal dan ramah namun tetap informatif. Balas dalam bahasa yang digunakan pengguna untuk prompt user berikutnya."]
                 },
                 {
-                    "role": "model", 
+                    "role": "Assistant", 
                     "parts": ["Halo! Saya adalah Ahlinya ahli, Sepuhnya sepuh. Senang bertemu dengan Anda! Sebagai pemilik pengetahuan luas dan mendalam di berbagai bidang, saya siap menjawab pertanyaan Anda dengan senang hati dan ramah namun tetap informatif. Apa yang ingin Anda ketahui hari ini?"]
                 }
             ]
@@ -60,7 +60,27 @@ async def chat(interaction: discord.Interaction, prompt: str):
     await interaction.response.defer()
     try:
         response = user_conversations[user_id].send_message(prompt)
-        await interaction.followup.send(response.text)
+        
+        # Pecah respons panjang menjadi beberapa bagian
+        full_response = response.text
+        
+        # Batas karakter Discord
+        MAX_LENGTH = 1900  # Sedikit di bawah 2000 untuk amannya
+        
+        # Jika respons melebihi batas
+        if len(full_response) > MAX_LENGTH:
+            # Pisahkan respons menjadi beberapa bagian
+            chunks = [full_response[i:i+MAX_LENGTH] for i in range(0, len(full_response), MAX_LENGTH)]
+            
+            # Kirim bagian pertama
+            await interaction.followup.send(chunks[0])
+            
+            # Kirim bagian lainnya
+            for chunk in chunks[1:]:
+                await interaction.channel.send(chunk)
+        else:
+            await interaction.followup.send(full_response)
+            
     except Exception as e:
         await interaction.followup.send("Maaf, ada masalah dengan permintaan.")
         print(f"Error: {str(e)}")
