@@ -7,6 +7,12 @@ from pathlib import Path
 import datetime
 from openai import OpenAI
 
+# Import logger
+from logger import setup_logger
+
+# Setup logger
+logger = setup_logger("discord_gemini_bot")
+
 # Load environment variables
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -14,25 +20,28 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 OPENAI_KEY = os.getenv("OPENAI_KEY")
 
 # Setup Google AI
+logger.info("Initializing Google AI and OpenAI clients")
 genai.configure(api_key=GOOGLE_API_KEY)
 openai_client = OpenAI(api_key=OPENAI_KEY)
 
 # Initialize Gemini model
 model = genai.GenerativeModel('gemini-2.0-flash')
+logger.info("Initialized Gemini model: gemini-2.0-flash")
 
 # Initialize Discord bot
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
+logger.info("Discord bot initialized")
 
 @bot.event
 async def on_ready():
-    print(f'{bot.user} has connected to Discord!')
+    logger.info(f'Bot {bot.user} has connected to Discord!')
     try:
         synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} command(s)")
+        logger.info(f"Synced {len(synced)} command(s)")
     except Exception as e:
-        print(e)
+        logger.error(f"Error syncing commands: {e}")
 
 # Menyimpan riwayat percakapan untuk setiap pengguna
 user_conversations = {}
@@ -40,9 +49,12 @@ user_conversations = {}
 @bot.tree.command(name="chat", description="Chat dengan Ahlinya ahli")
 async def chat(interaction: discord.Interaction, prompt: str):
     user_id = str(interaction.user.id)
+    username = interaction.user.name
+    logger.info(f"User {username} (ID: {user_id}) menggunakan command /chat")
     
     # Inisialisasi chat jika belum ada
     if user_id not in user_conversations:
+        logger.info(f"Membuat riwayat percakapan baru untuk {username}")
         user_conversations[user_id] = model.start_chat(
             history=[
                 {
@@ -59,7 +71,11 @@ async def chat(interaction: discord.Interaction, prompt: str):
     # Kirim pesan dan dapatkan respons
     await interaction.response.defer()
     try:
+        logger.info(f"Memproses prompt dari {username}: '{prompt[:30]}...'")
         response = user_conversations[user_id].send_message(prompt)
+        
+        # Log response length
+        logger.info(f"Respons untuk {username}: {len(response.text)} karakter")
         
         # Pecah respons panjang menjadi beberapa bagian
         full_response = response.text
@@ -82,11 +98,15 @@ async def chat(interaction: discord.Interaction, prompt: str):
             await interaction.followup.send(full_response)
             
     except Exception as e:
+        logger.error(f"Error saat memproses chat dari {username}: {e}")
         await interaction.followup.send("Maaf, ada masalah dengan permintaan.")
-        print(f"Error: {str(e)}")
 
+# Update TTS command with logging
 @bot.tree.command(name="tts", description="Ubah teks menjadi suara")
 async def text_to_speech(interaction: discord.Interaction, text: str):
+    username = interaction.user.name
+    logger.info(f"User {username} menggunakan command /tts")
+    
     await interaction.response.defer()
     try:
         # Buat folder output jika belum ada
@@ -108,19 +128,32 @@ async def text_to_speech(interaction: discord.Interaction, text: str):
         ) as response:
             response.stream_to_file(speech_file_path)
         
+        logger.info(f"File TTS berhasil dibuat: {filename}")
         await interaction.followup.send(file=discord.File(speech_file_path))
     except Exception as e:
+        logger.error(f"Error saat membuat TTS untuk {username}: {e}")
         await interaction.followup.send(f"Sorry, there is a problem with the request.")
-        print(f"Error: {str(e)}")
 
+# Update reset command with logging
 @bot.tree.command(name="reset", description="Reset riwayat percakapan")
 async def reset_conversation(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
+    username = interaction.user.name
+    logger.info(f"User {username} (ID: {user_id}) menggunakan command /reset")
+    
     if user_id in user_conversations:
         del user_conversations[user_id]
+        logger.info(f"Riwayat percakapan untuk {username} berhasil direset")
         await interaction.response.send_message("Riwayat percakapan telah direset.")
     else:
+        logger.info(f"User {username} mencoba mereset riwayat yang tidak ada")
         await interaction.response.send_message("Tidak ada riwayat percakapan untuk direset.")
 
-# Run the bot
-bot.run(DISCORD_TOKEN)
+# Run the bot with logging
+logger.info("Starting bot")
+try:
+    bot.run(DISCORD_TOKEN)
+except Exception as e:
+    logger.critical(f"Bot crashed: {e}")
+finally:
+    logger.info("Bot shutting down")
