@@ -1,4 +1,7 @@
+# Environment variables
 .env
-output/*
-logs/*
-__pycache__/*
+
+# Output files
+output/
+logs/
+__pycache__/
