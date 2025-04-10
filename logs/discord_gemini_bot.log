@@ -1,0 +1,12 @@
+[2025-04-10 13:52:55,213] INFO [discord_gemini_bot.<module>:23] Initializing Google AI and OpenAI clients
+[2025-04-10 13:52:55,399] INFO [discord_gemini_bot.<module>:29] Initialized Gemini model: gemini-2.0-flash
+[2025-04-10 13:52:55,401] INFO [discord_gemini_bot.<module>:35] Discord bot initialized
+[2025-04-10 13:52:55,401] INFO [discord_gemini_bot.<module>:153] Starting bot
+[2025-04-10 13:52:59,581] INFO [discord_gemini_bot.on_ready:39] Bot peakbot#3358 has connected to Discord!
+[2025-04-10 13:53:00,127] INFO [discord_gemini_bot.on_ready:42] Synced 3 command(s)
+[2025-04-10 13:53:28,202] INFO [discord_gemini_bot.chat:53] User crystallizer (ID: 407437297621925890) menggunakan command /chat
+[2025-04-10 13:53:28,204] INFO [discord_gemini_bot.chat:57] Membuat riwayat percakapan baru untuk crystallizer
+[2025-04-10 13:53:28,802] INFO [discord_gemini_bot.chat:74] Memproses prompt dari crystallizer: 'bro ini menggunakan segala car...'
+[2025-04-10 13:53:34,136] INFO [discord_gemini_bot.chat:78] Respons untuk crystallizer: 2142 karakter
+[2025-04-10 13:53:44,239] INFO [discord_gemini_bot.text_to_speech:108] User crystallizer menggunakan command /tts
+[2025-04-10 13:53:46,550] INFO [discord_gemini_bot.text_to_speech:131] File TTS berhasil dibuat: tts_20250410_135344.mp3
