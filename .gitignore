@@ -2,3 +2,5 @@
 speech.mp3
 output/*
 ./__pycache__
+./logs
+logs/*

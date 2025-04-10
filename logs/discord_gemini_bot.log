@@ -19,3 +19,4 @@
 [2025-04-10 14:22:32,155] INFO [discord_gemini_bot.text_to_speech:108] User crystallizer menggunakan command /tts
 [2025-04-10 14:22:36,715] INFO [discord_gemini_bot.text_to_speech:131] File TTS berhasil dibuat: tts_20250410_142232.mp3
 [2025-04-10 14:28:09,641] INFO [discord_gemini_bot.<module>:159] Bot shutting down
+[2025-04-10 14:29:29,460] INFO [discord_gemini_bot.<module>:26] Initializing Google AI and OpenAI clients
