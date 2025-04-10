@@ -1,3 +1,4 @@
 .env
 speech.mp3
 output/*
+./__pycache__
