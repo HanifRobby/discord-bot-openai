@@ -1,6 +1,4 @@
 .env
-speech.mp3
 output/*
-./__pycache__
-./logs
 logs/*
+__pycache__/*
