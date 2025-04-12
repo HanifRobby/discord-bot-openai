@@ -9,17 +9,14 @@ from openai import OpenAI
 
 # Import logger
 from logger import setup_logger
-
-# Setup logger
 logger = setup_logger("discord_gemini_bot")
 
-# Load environment variables
+# Load environment variables and initialize clients
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 OPENAI_KEY = os.getenv("OPENAI_KEY")
 
-# Setup Google AI
 logger.info("Initializing Google AI and OpenAI clients")
 genai.configure(api_key=GOOGLE_API_KEY)
 openai_client = OpenAI(api_key=OPENAI_KEY)
@@ -43,7 +40,7 @@ async def on_ready():
     except Exception as e:
         logger.error(f"Error syncing commands: {e}")
 
-# Menyimpan riwayat percakapan untuk setiap pengguna
+# Store conversation history for each user
 user_conversations = {}
 
 @bot.tree.command(name="chat", description="Chat dengan Ahlinya ahli")
@@ -52,7 +49,7 @@ async def chat(interaction: discord.Interaction, prompt: str):
     username = interaction.user.name
     logger.info(f"User {username} (ID: {user_id}) menggunakan command /chat")
     
-    # Inisialisasi chat jika belum ada
+    # Initialize chat if not exists
     if user_id not in user_conversations:
         logger.info(f"Membuat riwayat percakapan baru untuk {username}")
         user_conversations[user_id] = model.start_chat(
@@ -68,30 +65,22 @@ async def chat(interaction: discord.Interaction, prompt: str):
             ]
         )
     
-    # Kirim pesan dan dapatkan respons
+    # Process request
     await interaction.response.defer()
     try:
         logger.info(f"Memproses prompt dari {username}: '{prompt[:30]}...'")
         response = user_conversations[user_id].send_message(prompt)
         
-        # Log response length
         logger.info(f"Respons untuk {username}: {len(response.text)} karakter")
-        
-        # Pecah respons panjang menjadi beberapa bagian
         full_response = response.text
         
-        # Batas karakter Discord
-        MAX_LENGTH = 1900  # Sedikit di bawah 2000 untuk amannya
-        
-        # Jika respons melebihi batas
+        # Discord character limit handling
+        MAX_LENGTH = 1900
         if len(full_response) > MAX_LENGTH:
-            # Pisahkan respons menjadi beberapa bagian
             chunks = [full_response[i:i+MAX_LENGTH] for i in range(0, len(full_response), MAX_LENGTH)]
             
-            # Kirim bagian pertama
             await interaction.followup.send(chunks[0])
             
-            # Kirim bagian lainnya
             for chunk in chunks[1:]:
                 await interaction.channel.send(chunk)
         else:
@@ -102,7 +91,6 @@ async def chat(interaction: discord.Interaction, prompt: str):
         await interaction.followup.send("Maaf, ada masalah dengan permintaan.")
 
 
-# Update TTS command with logging
 @bot.tree.command(name="tts", description="Ubah teks menjadi suara")
 async def text_to_speech(interaction: discord.Interaction, text: str):
     username = interaction.user.name
@@ -110,15 +98,13 @@ async def text_to_speech(interaction: discord.Interaction, text: str):
     
     await interaction.response.defer()
     try:
-        # Buat folder output jika belum ada
+        # Create output folder if it doesn't exist
         output_dir = Path(__file__).parent / "output"
         output_dir.mkdir(exist_ok=True)
         
-        # Buat nama file unik berdasarkan timestamp
+        # Create unique filename with timestamp
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"tts_{timestamp}.mp3"
-        
-        # Path lengkap file output
         speech_file_path = output_dir / filename
         
         with openai_client.audio.speech.with_streaming_response.create(
@@ -136,7 +122,6 @@ async def text_to_speech(interaction: discord.Interaction, text: str):
         await interaction.followup.send(f"Sorry, there is a problem with the request.")
 
 
-# Update reset command with logging
 @bot.tree.command(name="reset", description="Reset riwayat percakapan")
 async def reset_conversation(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
@@ -151,7 +136,7 @@ async def reset_conversation(interaction: discord.Interaction):
         logger.info(f"User {username} mencoba mereset riwayat yang tidak ada")
         await interaction.response.send_message("Tidak ada riwayat percakapan untuk direset.")
 
-# Run the bot with logging
+# Run the bot
 logger.info("Starting bot")
 try:
     bot.run(DISCORD_TOKEN)
