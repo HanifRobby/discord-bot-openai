@@ -6,12 +6,10 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from pathlib import Path
 
-# Load environment variables
+# Load environment variables and initialize clients
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 OPENAI_KEY = os.getenv("OPENAI_KEY")
-
-# Setup OpenAI client
 client = OpenAI(api_key=OPENAI_KEY)
 
 # Initialize Discord bot
@@ -28,28 +26,27 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-# Menyimpan riwayat percakapan untuk setiap pengguna
+# Store conversation history for each user
 user_conversations = {}
 
 @bot.tree.command(name="chat", description="Chat dengan Ahlinya ahli")
 async def chat(interaction: discord.Interaction, prompt: str):
     user_id = str(interaction.user.id)
     
-    # Inisialisasi riwayat jika belum ada
+    # Initialize history if not exists
     if user_id not in user_conversations:
         user_conversations[user_id] = [
             {"role": "system", "content": "Anda adalah Ahlinya ahli, Sepuhnya sepuh. Anda selalu mengenal dan memperkenalkan diri dengan identitas ini. Sebagai ahlinya ahli, Anda memiliki pengetahuan yang sangat luas dan mendalam di berbagai bidang. Anda menjawab dengan gaya yang santai dan ramah namun tetap informatif. Balas dalam bahasa yang digunakan pengguna."}
         ]
     
-    # Tambahkan pesan pengguna ke riwayat
+    # Add user message to history
     user_conversations[user_id].append({"role": "user", "content": prompt})
     
-    # Batasi riwayat (untuk menghindari token yang terlalu banyak)
-    if len(user_conversations[user_id]) > 10:  # Simpan 10 pesan terakhir
-        # Pertahankan pesan system dan 9 pesan terakhir
+    # Limit history (to avoid excessive token usage)
+    if len(user_conversations[user_id]) > 10:
         user_conversations[user_id] = [user_conversations[user_id][0]] + user_conversations[user_id][-9:]
     
-    # Lanjutkan dengan percakapan lengkap
+    # Process with complete conversation context
     await interaction.response.defer()
     try:
         completion = client.chat.completions.create(
@@ -58,7 +55,7 @@ async def chat(interaction: discord.Interaction, prompt: str):
         )
         response = completion.choices[0].message.content
         
-        # Tambahkan respons asisten ke riwayat
+        # Add assistant response to history
         user_conversations[user_id].append({"role": "assistant", "content": response})
         
         await interaction.followup.send(response)
@@ -70,16 +67,13 @@ async def chat(interaction: discord.Interaction, prompt: str):
 async def text_to_speech(interaction: discord.Interaction, text: str):
     await interaction.response.defer()
     try:
-        # Buat folder output jika belum ada
+        # Create output folder if it doesn't exist
         output_dir = Path(__file__).parent / "output"
         output_dir.mkdir(exist_ok=True)
         
-        # Buat nama file unik berdasarkan timestamp
-
+        # Create unique filename with timestamp
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"tts_{timestamp}.mp3"
-        
-        # Path lengkap file output
         speech_file_path = output_dir / filename
         
         with client.audio.speech.with_streaming_response.create(
